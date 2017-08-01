@@ -12,7 +12,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -45,7 +44,7 @@ func main() {
 					SampleRateHertz: 16000,
 					LanguageCode:    "cmn-Hant-TW",
 				},
-				SingleUtterance: false,
+				SingleUtterance: true,
 				InterimResults:  true,
 			},
 		},
@@ -79,6 +78,8 @@ func main() {
 		}
 	}()
 
+	l := log.New(os.Stderr, "Result:", 0)
+
 	for {
 		resp, err := stream.Recv()
 		if err == io.EOF {
@@ -91,7 +92,7 @@ func main() {
 			log.Fatalf("Could not recognize: %v", err)
 		}
 		for _, result := range resp.Results {
-			fmt.Printf("Result: %+v\n", result)
+			l.Printf("%+v\n", result)
 		}
 	}
 	// [END speech_streaming_mic_recognize]
