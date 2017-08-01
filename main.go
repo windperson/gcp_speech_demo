@@ -20,10 +20,12 @@ import (
 	"cloud.google.com/go/speech/apiv1"
 	"golang.org/x/net/context"
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
+	"time"
 )
 
 func main() {
-	ctx := context.Background()
+	bgCtx := context.Background()
+	ctx, _ := context.WithDeadline(bgCtx, time.Now().Add(240*time.Second))
 
 	// [START speech_streaming_mic_recognize]
 	client, err := speech.NewClient(ctx)
@@ -43,8 +45,8 @@ func main() {
 					SampleRateHertz: 16000,
 					LanguageCode:    "cmn-Hant-TW",
 				},
-				SingleUtterance: true,
-				InterimResults: true,
+				SingleUtterance: false,
+				InterimResults:  true,
 			},
 		},
 	}); err != nil {
