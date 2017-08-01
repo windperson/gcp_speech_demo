@@ -17,7 +17,7 @@ import (
 	"log"
 	"os"
 
-	speech "cloud.google.com/go/speech/apiv1"
+	"cloud.google.com/go/speech/apiv1"
 	"golang.org/x/net/context"
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
 )
@@ -41,8 +41,10 @@ func main() {
 				Config: &speechpb.RecognitionConfig{
 					Encoding:        speechpb.RecognitionConfig_LINEAR16,
 					SampleRateHertz: 16000,
-					LanguageCode:    "en-US",
+					LanguageCode:    "cmn-Hant-TW",
 				},
+				SingleUtterance: true,
+				InterimResults: true,
 			},
 		},
 	}); err != nil {
