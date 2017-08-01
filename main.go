@@ -6,8 +6,9 @@
 // Google Speech API and outputs the transcript.
 //
 // As an example, gst-launch can be used to capture the mic input:
-//
-//    $ gst-launch-1.0 -v pulsesrc ! audioconvert ! audioresample ! audio/x-raw,channels=1,rate=16000 ! filesink location=/dev/stdout | livecaption
+// 1. Download & install gstreamer-tools: https://gstreamer.freedesktop.org/download/
+// 2. Run go build, then run following command line:
+// gst-launch-1.0 -v pulsesrc ! audioconvert ! audioresample ! audio/x-raw,channels=1,rate=16000 ! filesink location=/dev/stdout | ./gcp_speech_demo
 package main
 
 import (
