@@ -5,10 +5,10 @@
 // Command livecaption pipes the stdin audio data to
 // Google Speech API and outputs the transcript.
 //
-// As an example, gst-launch can be used to capture the mic input:
-// 1. Download & install gstreamer-tools: https://gstreamer.freedesktop.org/download/
+// As an example, gst-launch can be used to capture the mic input on Ubuntu Linux:
+// 1. Install gstreamer-tools: apt-get install gstreamer-tools
 // 2. Run go build, then run following command line:
-// gst-launch-1.0 -v pulsesrc ! audioconvert ! audioresample ! audio/x-raw,channels=1,rate=16000 ! filesink location=/dev/stdout | ./gcp_speech_demo
+// gst-launch-1.0 -v alsasrc ! audioconvert ! audioresample ! audio/x-raw,channels=1,rate=16000 ! filesink location=/dev/stdout | ./gcp_speech_demo
 package main
 
 import (
@@ -24,7 +24,7 @@ import (
 
 func main() {
 	bgCtx := context.Background()
-	ctx, _ := context.WithDeadline(bgCtx, time.Now().Add(240*time.Second))
+	ctx, _ := context.WithDeadline(bgCtx, time.Now().Add(205*time.Second))
 
 	// [START speech_streaming_mic_recognize]
 	client, err := speech.NewClient(ctx)
@@ -35,16 +35,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	// Send the initial configuration message.
+	os.Stderr.WriteString("sending init StreamingConfig...\n")
 	if err := stream.Send(&speechpb.StreamingRecognizeRequest{
 		StreamingRequest: &speechpb.StreamingRecognizeRequest_StreamingConfig{
 			StreamingConfig: &speechpb.StreamingRecognitionConfig{
 				Config: &speechpb.RecognitionConfig{
 					Encoding:        speechpb.RecognitionConfig_LINEAR16,
 					SampleRateHertz: 16000,
-					LanguageCode:    "cmn-Hant-TW",
+					LanguageCode:    "en-US",
 				},
-				SingleUtterance: true,
+				SingleUtterance: false,
 				InterimResults:  true,
 			},
 		},
@@ -53,6 +55,8 @@ func main() {
 	}
 
 	go func() {
+		sl := log.New(os.Stderr, "", 0)
+		sl.Println("start sending to Speech API...")
 		// Pipe stdin to the API.
 		buf := make([]byte, 1024)
 		for {
@@ -60,25 +64,26 @@ func main() {
 			if err == io.EOF {
 				// Nothing else to pipe, close the stream.
 				if err := stream.CloseSend(); err != nil {
-					log.Fatalf("Could not close stream: %v", err)
+					sl.Fatalf("Could not close stream: %v", err)
 				}
 				return
 			}
 			if err != nil {
-				log.Printf("Could not read from stdin: %v", err)
+				sl.Printf("Could not read from stdin: %v", err)
 				continue
 			}
+
 			if err = stream.Send(&speechpb.StreamingRecognizeRequest{
 				StreamingRequest: &speechpb.StreamingRecognizeRequest_AudioContent{
 					AudioContent: buf[:n],
 				},
 			}); err != nil {
-				log.Printf("Could not send audio: %v", err)
+				sl.Printf("Could not send audio: %v", err)
 			}
 		}
 	}()
 
-	l := log.New(os.Stderr, "Result:", 0)
+	rl := log.New(os.Stderr, "", 0)
 
 	for {
 		resp, err := stream.Recv()
@@ -92,7 +97,11 @@ func main() {
 			log.Fatalf("Could not recognize: %v", err)
 		}
 		for _, result := range resp.Results {
-			l.Printf("%+v\n", result)
+			if result.IsFinal {
+				rl.Printf("\n\nGOT : %s\n\n",result.Alternatives)
+				continue
+			}
+			rl.Printf("%s receive= %+v\n", time.Now().Format(time.RFC850), result)
 		}
 	}
 	// [END speech_streaming_mic_recognize]
