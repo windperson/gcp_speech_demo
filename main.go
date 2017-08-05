@@ -16,10 +16,11 @@ import (
 	"log"
 	"os"
 
+	"time"
+
 	"cloud.google.com/go/speech/apiv1"
 	"golang.org/x/net/context"
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
-	"time"
 )
 
 func main() {
@@ -98,7 +99,10 @@ func main() {
 		}
 		for _, result := range resp.Results {
 			if result.IsFinal {
-				rl.Printf("\n\nGOT : %s\n\n",result.Alternatives)
+				for _, alternate := range result.Alternatives {
+					rl.Printf("\n\nGOT: { %s } ,\ncorrect= %f %%\n\n", alternate.Transcript, alternate.Confidence)
+				}
+
 				continue
 			}
 			rl.Printf("%s receive= %+v\n", time.Now().Format(time.RFC850), result)
